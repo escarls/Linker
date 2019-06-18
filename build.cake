@@ -1,7 +1,7 @@
-#module nuget:?package=Cake.DotNetTool.Module&version=0.3.0
+//#module nuget:?package=Cake.DotNetTool.Module&version=0.3.0
 //#tool "dotnet:?package=GitVersion.Tool&version=5.0.0-beta2-6"
-#tool "dotnet:?package=GitVersion.Tool&version=4.0.1-beta1-65"
-//#tool "nuget:?package=GitVersion.CommandLine&version=4.0.0-beta0012";
+//#tool "dotnet:?package=GitVersion.Tool&version=4.0.1-beta1-65"
+#tool "nuget:?package=GitVersion.CommandLine&version=4.0.0-beta0012";
 #tool "nuget:?package=OctopusTools&version=6.7.0"
 #addin "nuget:?package=Cake.Npm&version=0.17.0"
 #addin "nuget:?package=Cake.Curl&version=4.1.0"
@@ -11,7 +11,7 @@
 #load "build/package.cake"
 #load "build/urls.cake"
 
-var target = Argument("Target", "Version");
+var target = Argument("Target", "Build-CI");
 
 Setup<PackageMetadata>(context =>
 {
@@ -158,5 +158,35 @@ Task("Deploy-Octopus")
                 WaitForDeployment = true
             });
     });
+
+Task("Set-Build-Number")
+    .WithCriteria(() => BuildSystem.IsRunningOnTeamCity)
+    .Does<PackageMetadata>(package =>
+    {
+        var buildNumber = TeamCity.Environment.Build.Number;
+        //TFBuild.Commands.UpdateBuildNumber(package.Version);
+        TeamCity.SetBuildNumber($"{package.Version}+{buildNumber}");
+    });
+
+Task("Publish-Build-Artifact")
+    .WithCriteria(() => BuildSystem.IsRunningOnTeamCity)
+    .IsDependentOn("Package-Zip")
+    .Does<PackageMetadata>(package =>
+    {
+        //TFBuild.Commands.UploadArtifactDirectory(Package.OutputDirectory);
+        foreach (var p in GetFiles(package.OutputDirectory + $"/{package.Extension}"))
+        {
+            TeamCity.PublishArtifacts(p.FullPath);
+        }
+    });
+
+Task("Build-CI")
+    .IsDependentOn("Compile")
+    .IsDependentOn("Test")
+    .IsDependentOn("Build-Frontend")
+    .IsDependentOn("Version")
+    .IsDependentOn("Package-Zip")
+    .IsDependentOn("Set-Build-Number")
+    .IsDependentOn("Publish-Build-Artifact");
 
 RunTarget(target);
