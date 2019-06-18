@@ -1,4 +1,7 @@
-#tool "nuget:?package=GitVersion.CommandLine&version=4.0.0-beta0012";
+#module nuget:?package=Cake.DotNetTool.Module&version=0.3.0
+//#tool "dotnet:?package=GitVersion.Tool&version=5.0.0-beta2-6"
+#tool "dotnet:?package=GitVersion.Tool&version=4.0.1-beta1-65"
+//#tool "nuget:?package=GitVersion.CommandLine&version=4.0.0-beta0012";
 #tool "nuget:?package=OctopusTools&version=6.7.0"
 #addin "nuget:?package=Cake.Npm&version=0.17.0"
 #addin "nuget:?package=Cake.Curl&version=4.1.0"
@@ -131,7 +134,6 @@ Task("Deploy-Octopus")
     .IsDependentOn("Package-Octopus")
     .Does<PackageMetadata>(package =>
     {
-        /*
         OctoPush(
             Urls.OctopusServerUrl.AbsoluteUri,
             EnvironmentVariable("OctopusApiKey"),
@@ -141,7 +143,7 @@ Task("Deploy-Octopus")
                 EnableServiceMessages = true,
                 ReplaceExisting = true
             });
-        */
+
         OctoCreateRelease(
             "Linker-4",
             new CreateReleaseSettings
