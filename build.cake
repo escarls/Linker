@@ -31,7 +31,14 @@ Task("Test")
     .IsDependentOn("Compile")
     .Does(() =>
 {
-    DotNetCoreTest(Paths.TestProjectFile.FullPath);
+    DotNetCoreTest(
+        Paths.TestProjectFile.FullPath,
+        new DotNetCoreTestSettings
+        {
+            Logger = "trx", // VSTest results format
+            ResultsDirectory = Paths.TestResultsDirectory
+        }
+        );
 });
 
 Task("Version")
@@ -180,6 +187,26 @@ Task("Publish-Build-Artifact")
         }
     });
 
+Task("Publish-Test-Results")
+    .WithCriteria(() => BuildSystem.IsRunningOnTeamCity)
+    .IsDependentOn("Test")
+    .Does(() =>
+    {
+        /*
+        TFBuild.Commands.PublishTestResults(
+            new TFBuildPublishTestResultsData
+            {
+                TestRunner = TFTestRunnerType.VSTest,
+                TestResultsFiles = GetFiles(Paths.TestResultsDirectory + "/*.trx").ToList();
+            }
+        )
+        */
+        foreach (var testResult in GetFiles(Paths.TestResultsDirectory + "/*.trx"))
+        {
+            TeamCity.ImportData("vstest", testResult);
+        }
+    });
+
 Task("Build-CI")
     .IsDependentOn("Compile")
     .IsDependentOn("Test")
@@ -187,6 +214,7 @@ Task("Build-CI")
     .IsDependentOn("Version")
     .IsDependentOn("Package-Zip")
     .IsDependentOn("Set-Build-Number")
-    .IsDependentOn("Publish-Build-Artifact");
+    .IsDependentOn("Publish-Build-Artifact")
+    .IsDependentOn("Publish-Test-Results");
 
 RunTarget(target);
