@@ -1,6 +1,10 @@
 branches:
   master:
     increment: Patch
+  cake-workshop:
+    regex: cake\-workshop
+    increment: Major
+    tag: wip
   develop:
     increment: Minor
     tag: preview
