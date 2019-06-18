@@ -11,7 +11,7 @@
 #load "build/package.cake"
 #load "build/urls.cake"
 
-var target = Argument("Target", "Build");
+var target = Argument("Target", "Package-Zip");
 
 Setup<PackageMetadata>(context =>
 {
